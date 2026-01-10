@@ -7,12 +7,13 @@ from rag.generator import generate_answer
 load_dotenv()
 
 documents = load_documents()
+print(f'Geladene Chunks: {len(documents)}')
 
 retriever = Retriever(documents)
 
 # Nutzerfrage
 
-question = "Warum ist RAG nützlich?"
+question = "Worum geht es in diesen Dokumenten?"
 
 retrieved_docs=retriever.retrieve(question)
 
@@ -28,4 +29,4 @@ print("\nGefundener Kontext:")
 print(context)
 print("\nAntwort:")
 print(answer)
-
+ 
