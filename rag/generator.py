@@ -7,15 +7,22 @@ from openai import OpenAI
 client = OpenAI()
 
 def generate_answer(question, retrieved_chunks):
+    if not retrieved_chunks:
+        return "Keine relevanten Quellen gefunden."
 
-    context = "\n\n".join(
-        f"[Quelle: {c['source']} | Seite: {c['page']}]\n{c['text']}"
-        for c in retrieved_chunks
-    )
+    context_blocks = []
+    for i, c in enumerate(retrieved_chunks, start=1):
+        block = f"""
+        [{i}] Quelle: {c['source']} | Seite: {c['page']}
+        {c['text']}"""
+        context_blocks.append(block)
+
+    context = "\n".join(context_blocks)
     
     prompt = f"""
-    Beantworte die Frage nur anhand des Kontexts.
-    Wenn die Antwort nicht im Kontext steht, sage das explizit.
+    Beantworte die Frage ausschließlich anhand der nummerierten Quellen.
+    Verwende in deiner Antwort explizite Zitate wie [1], [2].
+    Wenn die Information nicht enthalten ist, sage das klar.
 
     Kontext: 
     {context}

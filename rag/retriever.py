@@ -30,16 +30,24 @@ class Retriever:
         
         self.index.add(self.vectors)
     
-    def retrieve(self, query, k=3):
-        
+    def retrieve(self, query, k=5, max_distance=1.2):
         query_embedding = client.embeddings.create(
             model="text-embedding-3-small",
             input=[query]
         )
+
         query_vector = np.array(
             [query_embedding.data[0].embedding],
             dtype="float32"
         )
-        _, indices = self.index.search(query_vector, k)
-        
-        return [self.chunks[i] for i in indices[0]]
+
+        distances, indices = self.index.search(query_vector, k)
+
+        results = []
+        for distance, idx in zip(distances[0], indices[0]):
+            if distance <= max_distance:
+                chunk = self.chunks[idx]
+                chunk["distance"] = float(distance)
+                results.append(chunk)
+
+        return results
