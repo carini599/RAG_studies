@@ -9,13 +9,14 @@ from openai import OpenAI
 client=OpenAI()
 
 class Retriever:
-    def __init__(self, documents):
+    def __init__(self, chunks):
         
-        self.documents = documents
+        self.chunks = chunks
+        texts = [c["text"] for c in chunks]
 
         embedding_response = client.embeddings.create(
             model="text-embedding-3-small",
-            input=documents
+            input=texts
         )
 
         self.vectors =np.array(
@@ -29,7 +30,7 @@ class Retriever:
         
         self.index.add(self.vectors)
     
-    def retrieve(self, query, k=2):
+    def retrieve(self, query, k=3):
         
         query_embedding = client.embeddings.create(
             model="text-embedding-3-small",
@@ -41,4 +42,4 @@ class Retriever:
         )
         _, indices = self.index.search(query_vector, k)
         
-        return [self.documents[i] for i in indices[0]]
+        return [self.chunks[i] for i in indices[0]]

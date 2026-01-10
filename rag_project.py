@@ -15,11 +15,12 @@ retriever = Retriever(documents)
 
 question = "Worum geht es in diesen Dokumenten?"
 
-retrieved_docs=retriever.retrieve(question)
+retrieved_chunks=retriever.retrieve(question)
 
-context="\n".join(retrieved_docs)
+context = "\n".join(chunk["text"] for chunk in retrieved_chunks)
 
-answer = generate_answer(question, context)
+
+answer = generate_answer(question, retrieved_chunks)
 
 # Ergebnisanzeige
 
@@ -29,4 +30,8 @@ print("\nGefundener Kontext:")
 print(context)
 print("\nAntwort:")
 print(answer)
+
+print("\n📚 Quellen:")
+for c in retrieved_chunks:
+    print(f"- {c['source']} | Seite: {c['page']} | Chunk: {c['chunk_id']}")
  

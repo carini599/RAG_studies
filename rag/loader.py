@@ -9,44 +9,72 @@ CHUNK_OVERLAP = 50
 
 def load_documents():
     
-    texts=[]
-    
+    chunks = []
+    chunk_id = 0
+
     for file in DATA_DIR.iterdir():
         if file.suffix == ".pdf":
-            texts.extend(load_pdf(file))
+            chunks.extend(load_pdf(file, chunk_id))
+            chunk_id = len(chunks)
         elif file.suffix in [".txt", ".md"]:
-            text.extend(load_text(file))
+            chunks.extend(load_text(file, chunk_id))
 
-    return chunk_texts(texts)
+    return chunks
 
 
-def load_pdf(path: Path):
+def load_pdf(path: Path, start_chunk_id:int):
     reader = PdfReader(path)
-    pages = []
-    for page in reader.pages:
-        text = page.extract_text()
-        if text:
-            pages.append(text)
-    return pages
-
-def load_text(path: Path):
-    return [path.read_text(encoding="utf-8")]
-
-
-def chunk_texts(texts): 
-    
     enc = tiktoken.get_encoding("cl100k_base")
     chunks = []
+    chunk_id = start_chunk_id
 
-    for text in texts:
-        # Change text to tokens
+    for page_number, page in enumerate(reader.pages, start=1):
+        text = page.extract_text()
+        if not text:
+            continue
+
         tokens = enc.encode(text)
-
         start = 0
+
         while start < len(tokens):
             end = start + CHUNK_SIZE
             chunk_tokens = tokens[start:end]
-            chunk_text=enc.decode(chunk_tokens)
-            chunks.append(chunk_text)
+
+            chunks.append({
+                "text": enc.decode(chunk_tokens),
+                "source": path.name,
+                "page": page_number,
+                "chunk_id": chunk_id
+            })
+
+            chunk_id += 1
             start += CHUNK_SIZE - CHUNK_OVERLAP
+
     return chunks
+
+
+def load_text(path: Path, start_chunk_id: int):
+    enc = tiktoken.get_encoding("cl100k_base")
+    text = path.read_text(encoding="utf-8")
+    tokens = enc.encode(text)
+
+    chunks = []
+    chunk_id = start_chunk_id
+    start = 0
+
+    while start < len(tokens):
+        end = start + CHUNK_SIZE
+        chunk_tokens = tokens[start:end]
+
+        chunks.append({
+            "text": enc.decode(chunk_tokens),
+            "source": path.name,
+            "page": None,
+            "chunk_id": chunk_id
+        })
+
+        chunk_id += 1
+        start += CHUNK_SIZE - CHUNK_OVERLAP
+
+    return chunks
+
